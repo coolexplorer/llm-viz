@@ -1,0 +1,17 @@
+# Build artifacts
+server
+*.exe
+*.test
+
+# Development files
+.env
+.env.local
+.vscode
+.idea
+
+# Testing
+coverage.out
+*.coverprofile
+
+# Documentation
+README.md
