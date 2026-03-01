@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProviderSelector from '@/app/components/ProviderSelector';
 
-// Mock localStorage
-const localStorageMock = (() => {
+// Mock localStorage factory
+const createLocalStorageMock = () => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] ?? null,
@@ -12,12 +12,15 @@ const localStorageMock = (() => {
     removeItem: (key: string) => { delete store[key]; },
     clear: () => { store = {}; },
   };
-})();
-
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+};
 
 beforeEach(() => {
-  localStorageMock.clear();
+  const localStorageMock = createLocalStorageMock();
+  vi.stubGlobal('localStorage', localStorageMock);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('ProviderSelector', () => {
