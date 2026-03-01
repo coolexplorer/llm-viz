@@ -11,24 +11,17 @@
 | Guide | Description | Difficulty | Time |
 |-------|-------------|------------|------|
 | [Quick Start](setup/quick-start.md) | Get llm-viz running in 5 minutes | Beginner | 5min |
-| [Production Setup](setup/production-setup.md) | Deploy to Railway + Vercel | Intermediate | 30min |
-| [Environment Configuration](setup/environment-config.md) | Configure API keys and settings | Beginner | 10min |
 
 ### Integration Guides
 
 | Guide | Description | Difficulty | Time |
 |-------|-------------|------------|------|
 | [**Claude Code Integration**](integration/claude-code-integration.md) | **Real-time monitoring for Claude Code** | **Intermediate** | **20min** |
-| [OpenAI Integration](integration/openai-integration.md) | Connect to OpenAI API | Beginner | 10min |
-| [Custom Tool Integration](integration/custom-tool-integration.md) | Integrate any LLM-powered tool | Advanced | 45min |
+| [Multi-Agent Monitoring](integration/multi-agent-monitoring.md) | Track multi-agent team token consumption | Intermediate | 15min |
 
 ### Troubleshooting
 
-| Guide | Description | Difficulty | Time |
-|-------|-------------|------------|------|
-| [Common Issues](troubleshooting/common-issues.md) | FAQ and quick fixes | Beginner | 5min |
-| [Cost Optimization](troubleshooting/cost-optimization.md) | Reduce token spend | Intermediate | 15min |
-| [Performance Tuning](troubleshooting/performance-tuning.md) | Optimize for speed | Advanced | 30min |
+Coming soon: Common issues, cost optimization, and performance tuning guides.
 
 ---
 
@@ -62,7 +55,7 @@
 
 **Goal**: Provide transparency on AI usage in projects
 
-1. Deploy with [Production Setup](setup/production-setup.md)
+1. Follow [Quick Start](setup/quick-start.md) to deploy
 2. Integrate with CI/CD
 3. Publish monthly cost reports
 
@@ -107,7 +100,6 @@ Found an issue? Have a better approach?
 
 1. Open an issue: https://github.com/coolexplorer/llm-viz/issues
 2. Submit a PR with your improvement
-3. Follow the [Contributing Guide](../../CONTRIBUTING.md)
 
 ---
 

@@ -123,7 +123,7 @@ Monitor during execution:
 ```bash
 # Check accumulated cost
 curl "http://localhost:8080/api/stats?session_id=test-coverage-80-20260301" \
-  | jq '.records | map(.usage.cost_usd) | add'
+  | jq '.records | map(.cost_usd) | add'
 
 # If approaching budget, consider:
 # - Switching to Haiku for verification tasks
@@ -139,9 +139,9 @@ After team completes:
 # Generate cost report
 curl "http://localhost:8080/api/stats?session_id=test-coverage-80-20260301&limit=1000" \
   | jq '{
-      total_input: [.records[].usage.usage.input_tokens] | add,
-      total_output: [.records[].usage.usage.output_tokens] | add,
-      total_cost: [.records[].usage.cost_usd] | add,
+      total_input: [.records[].usage.input_tokens] | add,
+      total_output: [.records[].usage.output_tokens] | add,
+      total_cost: [.records[].cost_usd] | add,
       request_count: (.records | length)
     }'
 
@@ -227,10 +227,10 @@ Compare costs across different teams:
 ```bash
 # All test coverage teams this month
 curl "http://localhost:8080/api/stats?start=2026-03-01T00:00:00Z" \
-  | jq '.records[] | select(.usage.session_id | startswith("test-coverage"))' \
-  | jq -s 'group_by(.usage.session_id) | map({
-      session: .[0].usage.session_id,
-      cost: map(.usage.cost_usd) | add
+  | jq '.records[] | select(.session_id | startswith("test-coverage"))' \
+  | jq -s 'group_by(.session_id) | map({
+      session: .[0].session_id,
+      cost: map(.cost_usd) | add
     })' \
   | jq 'sort_by(.cost) | reverse'
 
@@ -273,13 +273,13 @@ Total cost: ~$2.00 (78% savings)
 
 ```bash
 # Verification tasks don't need Sonnet:
-# Sonnet: $15/M input, $75/M output
-# Haiku:  $0.80/M input, $4/M output
+# Sonnet: $3/M input, $15/M output
+# Haiku:  $1/M input, $5/M output
 
 # For 50K verification task:
-# Sonnet: $3.75
-# Haiku:  $0.20
-# Savings: $3.55 per verification (95% cheaper)
+# Sonnet: $0.90 (50K input + output combined)
+# Haiku:  $0.30 (50K input + output combined)
+# Savings: $0.60 per verification (67% cheaper)
 ```
 
 ---

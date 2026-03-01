@@ -130,7 +130,10 @@ go run ./cmd/server
 Open a **new terminal window**:
 
 ```bash
-cd /Users/kimseunghwan/ClaudProjects/llm-viz/frontend
+# Set LLM_VIZ_ROOT if not already set
+LLM_VIZ_ROOT="${LLM_VIZ_ROOT:-$HOME/llm-viz}"
+
+cd "$LLM_VIZ_ROOT/frontend"
 npm install  # Only needed once
 npm run dev
 
@@ -160,7 +163,7 @@ Use a consistent session ID to group related Claude Code interactions:
 
 ### 4.2 Create Test Script
 
-Create `/Users/kimseunghwan/ClaudProjects/llm-viz/test-claude-integration.sh`:
+Create `test-claude-integration.sh` in your llm-viz directory:
 
 ```bash
 #!/bin/bash
@@ -198,10 +201,25 @@ chmod +x test-claude-integration.sh
 ```
 
 **Expected Result**:
-- Terminal shows JSON response with token usage
+
+Terminal shows JSON response:
+```json
+{
+  "id": "msg_01abc123",
+  "content": "Hello! This is Claude responding to your test message from llm-viz.",
+  "usage": {
+    "input_tokens": 24,
+    "output_tokens": 18,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "total_tokens": 42
+  }
+}
+```
+
 - Dashboard updates in real-time
-- Token counter increments
-- Cost tracker shows USD estimate
+- Token counter increments to 42 total tokens
+- Cost tracker shows USD estimate (~$0.00054 for this request)
 
 ---
 
@@ -214,25 +232,29 @@ Create `~/bin/claude-monitored`:
 ```bash
 #!/bin/bash
 # claude-monitored - Run Claude Code with llm-viz monitoring
+# Set LLM_VIZ_ROOT to your llm-viz installation path (defaults to ~/llm-viz)
 
-# 1. Start llm-viz backend (if not running)
+# 1. Determine llm-viz root directory
+LLM_VIZ_ROOT="${LLM_VIZ_ROOT:-$HOME/llm-viz}"
+
+# 2. Start llm-viz backend (if not running)
 if ! curl -s http://localhost:8080/api/health > /dev/null; then
     echo "🚀 Starting llm-viz backend..."
-    cd /Users/kimseunghwan/ClaudProjects/llm-viz/backend
+    cd "$LLM_VIZ_ROOT/backend"
     go run ./cmd/server > /tmp/llm-viz-backend.log 2>&1 &
     sleep 2
 fi
 
-# 2. Open dashboard in browser (if not open)
+# 3. Open dashboard in browser (if not open)
 if ! curl -s http://localhost:3000 > /dev/null; then
     echo "🌐 Starting llm-viz dashboard..."
-    cd /Users/kimseunghwan/ClaudProjects/llm-viz/frontend
+    cd "$LLM_VIZ_ROOT/frontend"
     npm run dev > /tmp/llm-viz-frontend.log 2>&1 &
     sleep 3
     open http://localhost:3000
 fi
 
-# 3. Set session ID based on current directory
+# 4. Set session ID based on current directory
 SESSION_ID="claude-$(basename $(pwd))-$(date +%H%M)"
 export CLAUDE_SESSION_ID="$SESSION_ID"
 
@@ -241,7 +263,7 @@ echo "   Dashboard: http://localhost:3000"
 echo "   Session: $SESSION_ID"
 echo ""
 
-# 4. Run Claude Code
+# 5. Run Claude Code
 claude "$@"
 ```
 
@@ -249,6 +271,10 @@ claude "$@"
 
 ```bash
 chmod +x ~/bin/claude-monitored
+
+# If llm-viz is not in ~/llm-viz, set LLM_VIZ_ROOT
+export LLM_VIZ_ROOT="/path/to/your/llm-viz"
+
 claude-monitored  # Instead of 'claude'
 ```
 
@@ -355,10 +381,10 @@ Track how much you save with prompt caching:
 curl "http://localhost:8080/api/stats?session_id=your-session" \
   | jq '.records[] | {
       timestamp,
-      input: .usage.usage.input_tokens,
-      cache_read: .usage.usage.cache_read_tokens,
-      cache_write: .usage.usage.cache_write_tokens,
-      cost: .usage.cost_usd
+      input: .usage.input_tokens,
+      cache_read: .usage.cache_read_tokens,
+      cache_write: .usage.cache_write_tokens,
+      cost: .cost_usd
     }'
 ```
 
@@ -467,7 +493,7 @@ Set alerts by monitoring accumulated cost:
 ```bash
 # Check total cost for today
 curl "http://localhost:8080/api/stats?start=$(date -u +%Y-%m-%dT00:00:00Z)" \
-  | jq '[.records[].usage.cost_usd] | add'
+  | jq '[.records[].cost_usd] | add'
 
 # If > $5, switch to Haiku or reduce context
 ```
