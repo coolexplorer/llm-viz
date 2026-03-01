@@ -4,16 +4,16 @@
 
 **Real-time multi-provider LLM token consumption and cost visualization dashboard**
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8.svg)](https://go.dev/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](#-license)
+[![Go Version](https://img.shields.io/badge/go-1.23+-00ADD8.svg)](https://go.dev/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6.svg)](https://www.typescriptlang.org/)
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [API](#-api) • [Contributing](#-contributing)
 
 ---
 
-**Monitor your LLM API usage across OpenAI, Anthropic, Gemini, Mistral, Groq, and OpenRouter**
+**Monitor your LLM API usage across OpenAI and Anthropic (Phase 1) — with Gemini, Mistral, Groq, and OpenRouter coming soon**
 
 Track token consumption, compare costs, optimize cache efficiency, and visualize spending in real-time.
 
@@ -29,8 +29,8 @@ Track token consumption, compare costs, optimize cache efficiency, and visualize
 - **Cost Tracker** — Accurate USD estimates with provider-specific pricing and cache savings
 
 ### 🔀 Multi-Provider Support
-- **6 Providers** — OpenAI, Anthropic, Gemini, Mistral, Groq, OpenRouter
-- **Provider Comparison** — Cost per 1K tokens across all providers
+- **2 Providers (Phase 1)** — OpenAI, Anthropic _(+4 more in Phases 2-3: Gemini, Mistral, Groq, OpenRouter)_
+- **Provider Comparison** — Cost per 1K tokens across configured providers
 - **Unified Interface** — Switch providers without changing your code
 
 ### ⚡ Performance Insights
@@ -42,7 +42,7 @@ Track token consumption, compare costs, optimize cache efficiency, and visualize
 - **Real-time Updates** — Server-Sent Events (SSE) for instant feedback
 - **Clean Architecture** — Hexagonal architecture (Ports & Adapters) in Go backend
 - **Type-Safe** — Full TypeScript support with strict mode
-- **Beautiful UI** — Modern dashboard built with Next.js 15 + Tailwind CSS + Recharts
+- **Beautiful UI** — Modern dashboard built with Next.js 16 + Tailwind CSS + Recharts
 
 ---
 
@@ -139,12 +139,26 @@ const response = await fetch('http://localhost:8080/api/complete', {
 });
 
 const data = await response.json();
-console.log(data.usage);
+console.log(data);
 // {
-//   input_tokens: 12,
-//   output_tokens: 58,
-//   cache_read_tokens: 0,
-//   cost_usd: 0.000234
+//   id: "msg_123",
+//   content: "Hello! How can I help you?",
+//   provider: "anthropic",
+//   model: "claude-sonnet-4-6",
+//   usage: {
+//     id: "uuid",
+//     timestamp: "2026-03-01T00:00:00Z",
+//     provider: "anthropic",
+//     model: "claude-sonnet-4-6",
+//     session_id: "my-session-123",
+//     usage: {
+//       input_tokens: 12,
+//       output_tokens: 58,
+//       total_tokens: 70,
+//       cache_read_tokens: 0
+//     },
+//     cost_usd: 0.000234
+//   }
 // }
 ```
 
@@ -218,7 +232,7 @@ eventSource.addEventListener('usage', (event) => {
 
 ```
 llm-viz/
-├── frontend/                 # Next.js 15 application
+├── frontend/                 # Next.js 16 application
 │   ├── app/
 │   │   ├── components/       # React components
 │   │   ├── api/             # API routes (proxy, stream)
@@ -227,7 +241,7 @@ llm-viz/
 │   ├── lib/                 # Utilities (cost calc, limits)
 │   └── types/               # TypeScript definitions
 │
-├── backend/                 # Go 1.22+ server
+├── backend/                 # Go 1.23+ server
 │   ├── cmd/server/          # Entry point (main.go)
 │   ├── internal/
 │   │   ├── domain/          # Core entities
@@ -247,8 +261,8 @@ llm-viz/
 
 | Category | Technologies |
 |----------|-------------|
-| **Frontend** | Next.js 15 (App Router), TypeScript 5.0+, Tailwind CSS v4, Recharts |
-| **Backend** | Go 1.22+, `anthropic-sdk-go`, `openai-go`, `generative-ai-go` |
+| **Frontend** | Next.js 16 (App Router), TypeScript 5.0+, Tailwind CSS v4, Recharts |
+| **Backend** | Go 1.23+, `anthropic-sdk-go` v1.26.0, `openai-go` v1.12.0 |
 | **Real-time** | Server-Sent Events (SSE) |
 | **Testing** | Vitest, Playwright (E2E), testify (Go), React Testing Library |
 | **Deployment** | Vercel (frontend), Railway (backend) |
@@ -413,7 +427,7 @@ This is an **AI-first project** managed by AI agents using Claude Code. We welco
 ## 📋 Requirements
 
 - **Node.js** 18.0.0 or higher
-- **Go** 1.22.0 or higher
+- **Go** 1.23.0 or higher
 - **npm** or **yarn** or **pnpm**
 - **Git** (for version control)
 - **API Keys** from at least one supported provider
@@ -422,7 +436,7 @@ This is an **AI-first project** managed by AI agents using Claude Code. We welco
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**.
 
 ---
 
