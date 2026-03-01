@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend - Go API server
   backend:
@@ -28,12 +26,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8080
     container_name: llm-viz-frontend
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://localhost:8080
     depends_on:
       backend:
         condition: service_healthy

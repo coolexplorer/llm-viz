@@ -19,16 +19,26 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/server
 
 # Stage 2: Runtime
-FROM alpine:latest
+FROM alpine:3.21
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates and wget for HTTPS and health checks
+RUN apk --no-cache add ca-certificates wget
+
+# Create non-root user
+RUN addgroup -S -g 1001 goapp && \
+    adduser -S -u 1001 -G goapp goapp
 
 # Copy binary from builder
 COPY --from=builder /app/server .
 COPY --from=builder /app/data ./data
+
+# Change ownership to non-root user
+RUN chown -R goapp:goapp /app
+
+# Switch to non-root user
+USER goapp
 
 # Expose port
 EXPOSE 8080
