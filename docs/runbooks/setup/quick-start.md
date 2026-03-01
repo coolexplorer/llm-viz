@@ -1,18 +1,72 @@
 # Quick Start Guide
 
-**Get llm-viz running in 5 minutes**
+**Get llm-viz running in 2 minutes with Docker Compose**
 
 ---
 
 ## Prerequisites
 
+**Option A: Docker Compose** (Recommended)
+- Docker Desktop 4.0+
+- Anthropic or OpenAI API key
+
+**Option B: Manual Setup**
 - Node.js 18+
 - Go 1.23+
 - Anthropic or OpenAI API key
 
 ---
 
-## Step 1: Clone & Install (2min)
+## 🚀 Quick Start with Docker Compose (2min)
+
+### Step 1: Clone & Configure (1min)
+
+```bash
+# Clone repository
+git clone https://github.com/coolexplorer/llm-viz.git
+cd llm-viz
+
+# Configure API keys
+cp .env.example .env
+nano .env  # Add your API keys
+```
+
+Example `.env`:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
+OPENAI_API_KEY=sk-xxxxx  # Optional
+```
+
+### Step 2: Start Services (1min)
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+```
+
+**✅ That's it!** Services are now running:
+- Backend: http://localhost:8080
+- Frontend: http://localhost:3000
+
+### Stop Services
+
+```bash
+# Stop services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```
+
+---
+
+## 🛠️ Manual Setup (Alternative Method)
+
+### Step 1: Clone & Install (2min)
 
 ```bash
 # Clone repository
@@ -28,9 +82,7 @@ cd frontend
 npm install
 ```
 
----
-
-## Step 2: Configure API Keys (1min)
+### Step 2: Configure API Keys (1min)
 
 ```bash
 # Backend
@@ -47,9 +99,7 @@ OPENAI_API_KEY=sk-xxxxx  # Optional
 PORT=8080
 ```
 
----
-
-## Step 3: Start Services (2min)
+### Step 3: Start Services (2min)
 
 **Terminal 1 - Backend:**
 

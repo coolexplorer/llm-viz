@@ -50,14 +50,57 @@ Track token consumption, compare costs, optimize cache efficiency, and visualize
 
 ### Prerequisites
 
-- **Node.js** 18+ (for frontend)
-- **Go** 1.22+ (for backend)
+**Option A: Docker Compose** (Recommended — 2 minutes)
+- **Docker Desktop** 4.0+
 - **API Keys** from one or more providers:
   - [OpenAI API Key](https://platform.openai.com/api-keys)
   - [Anthropic API Key](https://console.anthropic.com/)
-  - [Google AI Studio](https://makersuite.google.com/app/apikey) (Gemini)
 
-### Frontend Only (Development)
+**Option B: Manual Setup** (Advanced — 5 minutes)
+- **Node.js** 18+
+- **Go** 1.23+
+- **API Keys** (same as above)
+
+---
+
+### 🐳 Docker Compose (Recommended)
+
+**Get running in 2 minutes:**
+
+```bash
+# Clone the repository
+git clone https://github.com/coolexplorer/llm-viz.git
+cd llm-viz
+
+# Configure API keys
+cp .env.example .env
+nano .env  # Add your ANTHROPIC_API_KEY and/or OPENAI_API_KEY
+
+# Start all services
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+```
+
+**That's it!** Open:
+- **Dashboard**: http://localhost:3000
+- **Backend API**: http://localhost:8080
+
+**Stop services:**
+```bash
+docker-compose down        # Stop containers
+docker-compose down -v     # Stop and remove volumes
+```
+
+---
+
+### 🛠️ Manual Setup (Alternative)
+
+<details>
+<summary><b>Click to expand manual setup instructions</b></summary>
+
+#### Frontend Only (Development)
 
 Perfect for testing the UI with mock data:
 
@@ -75,7 +118,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Full Stack (Production-Ready)
+#### Full Stack (Production-Ready)
 
 Run both frontend and backend for real API integration:
 
@@ -108,6 +151,8 @@ npm run dev
 
 # Open http://localhost:3000
 ```
+
+</details>
 
 ---
 
