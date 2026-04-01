@@ -82,6 +82,24 @@ func main() {
 	addr := fmt.Sprintf(":%s", httpPort)
 	srv := httpserver.NewServer(tracker, broadcaster, pricingRepo, logger, addr, allowedOrigin)
 
+	// Wire up production key manager when ENCRYPTION_SECRET is configured.
+	if encSecret := os.Getenv("ENCRYPTION_SECRET"); encSecret != "" {
+		if len(encSecret) != 32 {
+			logger.Error("ENCRYPTION_SECRET must be exactly 32 bytes", "len", len(encSecret))
+			os.Exit(1)
+		}
+		keyRepo := memory.NewKeyRepository()
+		km, err := service.NewKeyManager(keyRepo, []byte(encSecret))
+		if err != nil {
+			logger.Error("failed to create key manager", "error", err)
+			os.Exit(1)
+		}
+		srv.SetKeyManager(km)
+		logger.Info("API key manager initialised with ENCRYPTION_SECRET")
+	} else {
+		logger.Warn("ENCRYPTION_SECRET not set — using ephemeral encryption key for API key storage")
+	}
+
 	// Graceful shutdown on SIGINT / SIGTERM.
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

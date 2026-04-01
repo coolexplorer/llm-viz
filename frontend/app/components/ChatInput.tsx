@@ -27,7 +27,10 @@ export default function ChatInput({ onSubmit, isLoading, disabled }: Props) {
   };
 
   return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 p-4 backdrop-blur-sm">
+    <div className="rounded-2xl glass-card-hover p-4">
+      {disabled && (
+        <p className="text-xs text-slate-500 mb-2">Enter an API key to send messages.</p>
+      )}
       <div className="flex gap-3 items-end">
         <textarea
           ref={textareaRef}
@@ -37,12 +40,12 @@ export default function ChatInput({ onSubmit, isLoading, disabled }: Props) {
           placeholder="Send a message to track token usage…"
           rows={2}
           disabled={disabled || isLoading}
-          className="flex-1 resize-none rounded-xl bg-slate-800 border border-slate-700 text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder:text-slate-600 disabled:opacity-50"
+          className="flex-1 resize-none rounded-xl bg-slate-800/50 border border-slate-700/50 text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-slate-500 disabled:opacity-50 transition-all duration-300"
         />
         <button
           onClick={() => void handleSubmit()}
           disabled={!input.trim() || isLoading || disabled}
-          className="rounded-xl px-5 py-3 text-sm font-semibold bg-teal-600 hover:bg-teal-500 disabled:bg-slate-700 disabled:text-slate-500 text-white transition-colors"
+          className="rounded-xl px-5 py-3 text-sm font-semibold bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-white shadow-md hover:shadow-[var(--shadow-glow-teal)] disabled:shadow-none transition-all duration-300 active:scale-95"
         >
           {isLoading ? (
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -54,9 +57,6 @@ export default function ChatInput({ onSubmit, isLoading, disabled }: Props) {
           )}
         </button>
       </div>
-      {disabled && (
-        <p className="mt-2 text-xs text-amber-400">Enter an API key above to start sending messages.</p>
-      )}
     </div>
   );
 }

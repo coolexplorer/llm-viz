@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { Provider } from '@/types/token-data';
 import { PROVIDER_MODELS } from '@/lib/model-limits';
+import type { ApiKey } from '@/types/api-key';
 
 export interface ProviderSettings {
   provider: Provider;
@@ -36,29 +37,94 @@ function readSavedSettings(): { provider: Provider; model: string } {
 export default function ProviderSelector({ onChange }: Props) {
   const [provider, setProvider] = useState<Provider>(() => readSavedSettings().provider);
   const [model, setModel] = useState<string>(() => readSavedSettings().model);
-  const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
+  const [apiKey, setApiKey] = useState<string>('');
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  // API Key Management state
+  const [savedKeys, setSavedKeys] = useState<ApiKey[]>([]);
+  const [showKeyManager, setShowKeyManager] = useState(false);
+  const [newKeyInput, setNewKeyInput] = useState('');
+  const [keyError, setKeyError] = useState<string | null>(null);
 
   // Notify parent + save to localStorage whenever settings change
   useEffect(() => {
     const settings: ProviderSettings = { provider, model, apiKey };
     onChange(settings);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ provider, model }));
-    // Note: apiKey intentionally NOT persisted to localStorage for security
   }, [provider, model, apiKey, onChange]);
+
+  // Fetch saved keys on mount
+  useEffect(() => {
+    fetch('http://localhost:8080/api/keys', { method: 'GET' })
+      .then((r) => r.json())
+      .then((data: { keys?: ApiKey[] }) => setSavedKeys(data.keys ?? []))
+      .catch(() => {
+        // silently ignore fetch errors on mount
+      });
+  }, []);
 
   const handleProviderChange = (p: Provider) => {
     setProvider(p);
     setModel(PROVIDER_MODELS[p][0]);
+    setApiKey('');
+  };
+
+  const handleSaveKey = async () => {
+    setKeyError(null);
+    if (!newKeyInput.startsWith('sk-')) {
+      setKeyError('Invalid API key format (must start with "sk-")');
+      return;
+    }
+    try {
+      const keyName = `${provider.charAt(0).toUpperCase() + provider.slice(1)} API Key`;
+      const res = await fetch('http://localhost:8080/api/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider, name: keyName, key: newKeyInput }),
+      });
+      if (!res.ok) {
+        const errData = await res.json() as { error?: string };
+        setKeyError(errData.error ?? 'Error saving key');
+        return;
+      }
+      const saved = await res.json() as { id: string; maskedKey: string; label?: string };
+      const newKey: ApiKey = {
+        id: saved.id,
+        provider,
+        maskedKey: saved.maskedKey,
+        label: saved.label ?? `${saved.maskedKey} (Active)`,
+      };
+      setSavedKeys((prev) => [...prev, newKey]);
+      setNewKeyInput('');
+    } catch {
+      setKeyError('Failed to save key. Network error.');
+    }
+  };
+
+  const handleDeleteKey = async (id: string) => {
+    setKeyError(null);
+    try {
+      const res = await fetch(`http://localhost:8080/api/keys/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        setKeyError('Delete failed');
+        return;
+      }
+      setSavedKeys((prev) => prev.filter((k) => k.id !== id));
+    } catch {
+      setKeyError('Delete failed');
+    }
   };
 
   const models = PROVIDER_MODELS[provider] ?? [];
+  const filteredKeys = savedKeys.filter((k) => k.provider === provider);
 
   return (
-    <div className="rounded-2xl bg-white/5 border border-white/10 p-6 backdrop-blur-sm">
-      <h2 className="text-lg font-semibold text-white mb-4">Provider Settings</h2>
+    <div className="rounded-2xl glass-card-hover p-6">
+      <h2 className="text-xl font-heading font-semibold text-white mb-4 tracking-tight">
+        Provider Settings
+      </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Provider */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
@@ -67,7 +133,7 @@ export default function ProviderSelector({ onChange }: Props) {
           <select
             value={provider}
             onChange={(e) => handleProviderChange(e.target.value as Provider)}
-            className="rounded-lg bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full rounded-xl bg-slate-800/50 border border-slate-700/50 text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
           >
             <option value="anthropic">Anthropic</option>
             <option value="openai">OpenAI</option>
@@ -82,7 +148,7 @@ export default function ProviderSelector({ onChange }: Props) {
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="rounded-lg bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full rounded-xl bg-slate-800/50 border border-slate-700/50 text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-300"
           >
             {models.map((m) => (
               <option key={m} value={m}>
@@ -91,46 +157,102 @@ export default function ProviderSelector({ onChange }: Props) {
             ))}
           </select>
         </div>
+      </div>
 
-        {/* API Key */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-            API Key <span className="text-amber-400">(browser only)</span>
-          </label>
-          <div className="relative">
+      {/* Main API Key Input */}
+      <div className="mt-4 flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+          API Key
+        </label>
+        <div className="flex gap-2">
+          <input
+            type={showApiKey ? 'text' : 'password'}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
+            className="flex-1 rounded-xl bg-slate-800/50 border border-slate-700/50 text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-slate-500 transition-all duration-300"
+          />
+          <button
+            type="button"
+            onClick={() => setShowApiKey((v) => !v)}
+            aria-label={showApiKey ? 'Hide Key' : 'Show Key'}
+            className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 text-sm transition-all duration-300"
+          >
+            {showApiKey ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        {!apiKey && (
+          <p className="text-xs text-amber-400">
+            Enter your API key to get started
+          </p>
+        )}
+      </div>
+
+      {/* API Key Management Section */}
+      <div className="mt-5 pt-4 border-t border-white/10">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-slate-300">API Key Management</span>
+          <button
+            type="button"
+            onClick={() => setShowKeyManager((v) => !v)}
+            aria-label="Manage API Keys"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium hover:bg-teal-500/20 transition-all duration-300"
+          >
+            {showKeyManager ? 'Cancel' : 'Add API Key'}
+          </button>
+        </div>
+
+        {/* Saved keys (simplified: 1 key per provider, no radio buttons) */}
+        {filteredKeys.length > 0 && (
+          <div className="flex flex-col gap-2 mb-3">
+            {filteredKeys.map((key) => (
+              <div
+                key={key.id}
+                className="flex items-center justify-between px-3 py-2 rounded-xl bg-teal-500/5 border border-teal-500/20"
+              >
+                <span className="text-sm text-slate-300 font-mono">
+                  {key.label ?? `${key.maskedKey} (Active)`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteKey(key.id)}
+                  aria-label="Delete"
+                  className="px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs transition-all duration-300"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add new key form (collapsed by default) */}
+        {showKeyManager && (
+          <div className="flex flex-col gap-3 rounded-xl bg-teal-500/5 border border-teal-500/20 p-4">
             <input
-              type={showKey ? 'text' : 'password'}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={provider === 'anthropic' ? 'sk-ant-...' : 'sk-...'}
-              className="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder:text-slate-600"
+              type="password"
+              value={newKeyInput}
+              onChange={(e) => setNewKeyInput(e.target.value)}
+              placeholder="paste your api key"
+              className="w-full rounded-xl bg-slate-800/50 border border-slate-700/50 text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-slate-500 transition-all duration-300"
             />
             <button
               type="button"
-              onClick={() => setShowKey(!showKey)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-              aria-label={showKey ? 'Hide key' : 'Show key'}
+              onClick={handleSaveKey}
+              disabled={!newKeyInput}
+              aria-label="Save Key"
+              className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white font-semibold text-sm shadow-md hover:shadow-[var(--shadow-glow-teal)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-95"
             >
-              {showKey ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              )}
+              Save Key
             </button>
           </div>
-        </div>
-      </div>
+        )}
 
-      {!apiKey && (
-        <p className="mt-3 text-xs text-amber-400/80">
-          Enter your API key to start tracking token usage. Keys are never sent to our servers.
-        </p>
-      )}
+        {/* Error message */}
+        {keyError && (
+          <p className="text-xs text-red-400 mt-2">{keyError}</p>
+        )}
+      </div>
     </div>
   );
 }

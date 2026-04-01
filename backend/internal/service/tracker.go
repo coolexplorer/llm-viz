@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kimseunghwan/llm-viz/backend/internal/adapter/provider/anthropic"
+	"github.com/kimseunghwan/llm-viz/backend/internal/adapter/provider/openai"
 	"github.com/kimseunghwan/llm-viz/backend/internal/domain"
 	"github.com/kimseunghwan/llm-viz/backend/internal/port"
 )
@@ -69,15 +71,31 @@ func NewTokenTracker(
 
 // TrackCompletion calls the provider, calculates cost, persists usage, and broadcasts via SSE.
 func (t *TokenTracker) TrackCompletion(ctx context.Context, req TrackRequest) (*domain.NormalizedUsage, error) {
-	provider, ok := t.providers[req.Provider]
-	if !ok {
-		return nil, fmt.Errorf("%w: %s", domain.ErrUnknownProvider, req.Provider)
+	var provider port.LLMProvider
+	var ok bool
+
+	// If request has API key, create runtime provider adapter
+	if req.APIKey != "" {
+		provider = t.createProviderWithKey(req.Provider, req.APIKey)
+		if provider == nil {
+			return nil, fmt.Errorf("%w: %s", domain.ErrUnknownProvider, req.Provider)
+		}
+	} else {
+		// Use default provider from initialization
+		provider, ok = t.providers[req.Provider]
+		if !ok {
+			return nil, fmt.Errorf("%w: %s", domain.ErrUnknownProvider, req.Provider)
+		}
 	}
+
+	t.logger.Info("calling provider", "provider", req.Provider, "model", req.Model, "session_id", req.SessionID)
 
 	result, err := provider.Complete(ctx, req.toCompletionRequest())
 	if err != nil {
 		return nil, err // already wrapped by adapter's mapError
 	}
+
+	t.logger.Info("provider response", "provider", req.Provider, "input_tokens", result.Usage.InputTokens, "output_tokens", result.Usage.OutputTokens)
 
 	pricing, err := t.pricing.GetPricing(ctx, req.Provider, req.Model)
 	if err != nil {
@@ -104,10 +122,12 @@ func (t *TokenTracker) TrackCompletion(ctx context.Context, req TrackRequest) (*
 		t.logger.Error("failed to persist usage", "error", err)
 	}
 
-	t.broadcaster.Publish(domain.UsageEvent{
+	event := domain.UsageEvent{
 		SessionID: req.SessionID,
 		Usage:     *normalized,
-	})
+	}
+	t.logger.Info("broadcasting event", "session_id", req.SessionID, "input", normalized.Usage.InputTokens, "output", normalized.Usage.OutputTokens)
+	t.broadcaster.Publish(event)
 
 	return normalized, nil
 }
@@ -129,6 +149,23 @@ func (t *TokenTracker) ListAvailableProviders() []domain.ProviderID {
 		ids = append(ids, id)
 	}
 	return ids
+}
+
+// Repo exposes the underlying usage repository (used for analytics wiring).
+func (t *TokenTracker) Repo() port.UsageRepository {
+	return t.repo
+}
+
+// createProviderWithKey creates a runtime provider adapter with the given API key.
+func (t *TokenTracker) createProviderWithKey(providerID domain.ProviderID, apiKey string) port.LLMProvider {
+	switch providerID {
+	case domain.ProviderAnthropic:
+		return anthropic.New(apiKey)
+	case domain.ProviderOpenAI:
+		return openai.New(apiKey)
+	default:
+		return nil
+	}
 }
 
 // hashAPIKey returns the first 8 hex chars of SHA-256 for safe logging/storage.

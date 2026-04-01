@@ -11,15 +11,19 @@ import (
 // Clients connect with: GET /api/sse?session_id=xxx
 func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
+		s.logger.Error("SSE: method not allowed", "method", r.Method)
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	sessionID := r.URL.Query().Get("session_id")
 	if sessionID == "" {
+		s.logger.Error("SSE: session_id missing")
 		http.Error(w, "session_id is required", http.StatusBadRequest)
 		return
 	}
+
+	s.logger.Info("SSE: connection attempt", "session_id", sessionID)
 
 	// Set SSE headers.
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -29,9 +33,12 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
+		s.logger.Error("SSE: streaming not supported")
 		http.Error(w, "streaming not supported", http.StatusInternalServerError)
 		return
 	}
+
+	s.logger.Info("SSE: headers set, subscribing", "session_id", sessionID)
 
 	events := s.broadcaster.Subscribe(sessionID)
 	defer s.broadcaster.Unsubscribe(sessionID)

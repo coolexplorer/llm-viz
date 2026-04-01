@@ -5,6 +5,8 @@ import type { TokenDataPoint } from '@/types/token-data';
 
 // Mock recharts components
 vi.mock('recharts', () => ({
+  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
+  Area: () => null,
   LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
   Line: () => null,
   XAxis: () => null,
@@ -33,7 +35,7 @@ function makeDataPoint(overrides: Partial<TokenDataPoint> = {}): TokenDataPoint 
 describe('UsageTimeline', () => {
   it('shows empty state message when data is empty', () => {
     render(<UsageTimeline data={[]} />);
-    expect(screen.getByText(/No data yet/i)).toBeInTheDocument();
+    expect(screen.getByText('No Timeline Data')).toBeInTheDocument();
   });
 
   it('shows Usage Timeline heading', () => {
@@ -56,7 +58,7 @@ describe('UsageTimeline', () => {
   it('does not show empty state when data is present', () => {
     const data = [makeDataPoint()];
     render(<UsageTimeline data={data} />);
-    expect(screen.queryByText(/No data yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('No Timeline Data')).not.toBeInTheDocument();
   });
 
   it('shows "Last 0 requests" for empty data', () => {

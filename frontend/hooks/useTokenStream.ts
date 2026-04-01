@@ -31,11 +31,7 @@ export function useTokenStream(streamUrl: string = '/api/stream') {
     es.onmessage = (event) => {
       try {
         const data: TokenDataPoint = JSON.parse(event.data);
-        setTokens((prev) => {
-          const next = [...prev.slice(-(MAX_DATA_POINTS - 1)), data];
-          setSessionStats(aggregateSessionStats(next));
-          return next;
-        });
+        setTokens((prev) => [...prev.slice(-(MAX_DATA_POINTS - 1)), data]);
       } catch {
         // Ignore malformed events
       }
@@ -52,6 +48,10 @@ export function useTokenStream(streamUrl: string = '/api/stream') {
     };
   }, [streamUrl]);
 
+  useEffect(() => {
+    setSessionStats(aggregateSessionStats(tokens));
+  }, [tokens]);
+
   const clearData = useCallback(() => {
     setTokens([]);
     setSessionStats({
@@ -66,11 +66,7 @@ export function useTokenStream(streamUrl: string = '/api/stream') {
   }, []);
 
   const addDataPoint = useCallback((point: TokenDataPoint) => {
-    setTokens((prev) => {
-      const next = [...prev.slice(-(MAX_DATA_POINTS - 1)), point];
-      setSessionStats(aggregateSessionStats(next));
-      return next;
-    });
+    setTokens((prev) => [...prev.slice(-(MAX_DATA_POINTS - 1)), point]);
   }, []);
 
   return { tokens, isConnected, error, sessionStats, clearData, addDataPoint };

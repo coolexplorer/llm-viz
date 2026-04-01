@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/kimseunghwan/llm-viz/backend/internal/domain"
 	"github.com/kimseunghwan/llm-viz/backend/internal/service"
@@ -55,13 +56,25 @@ func (s *Server) handleCompletion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Resolve API key: if it's a UUID (key_id), decrypt from KeyManager
+	apiKey := req.APIKey
+	if apiKey != "" && !isRawAPIKey(apiKey) {
+		// Assume it's a key_id - decrypt from storage
+		decrypted, err := s.keyManager.GetDecryptedKey(r.Context(), req.APIKey)
+		if err != nil {
+			http.Error(w, "invalid or expired API key", http.StatusUnauthorized)
+			return
+		}
+		apiKey = decrypted
+	}
+
 	trackReq := service.TrackRequest{
 		Provider:   domain.ProviderID(req.Provider),
 		Model:      req.Model,
 		Messages:   req.Messages,
 		MaxTokens:  req.MaxTokens,
 		SessionID:  req.SessionID,
-		APIKey:     req.APIKey,
+		APIKey:     apiKey,
 		ProjectTag: req.ProjectTag,
 	}
 
@@ -102,4 +115,11 @@ func writeError(w http.ResponseWriter, err error) {
 		status = http.StatusServiceUnavailable
 	}
 	http.Error(w, err.Error(), status)
+}
+
+// isRawAPIKey returns true if the string looks like a raw API key (not a UUID).
+func isRawAPIKey(key string) bool {
+	// Raw API keys typically start with "sk-" (OpenAI, Anthropic, etc.)
+	// UUIDs are 36 chars with hyphens: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+	return strings.HasPrefix(key, "sk-") || strings.HasPrefix(key, "api-")
 }

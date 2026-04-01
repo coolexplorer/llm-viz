@@ -1,27 +1,539 @@
 @import "tailwindcss";
 
-:root {
-  --color-teal: #0D9488;
-  --color-indigo: #4F46E5;
-  --color-amber: #F59E0B;
+/* ═══════════════════════════════════════════════════════════════
+   NEURAL NETWORK MONITOR - Cyberpunk Data Terminal Theme
+   Retro-futuristic + 1980s CRT + Living data visualization
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Note: Fonts loaded in layout.tsx via next/font/google */
+
+@theme {
+  --font-family-display: var(--font-orbitron), monospace;       /* Headers - Sci-fi geometric */
+  --font-family-body: var(--font-rajdhani), sans-serif;         /* Body - Tech/futuristic */
+  --font-family-mono: var(--font-share-tech), monospace;        /* Numbers - Terminal */
 }
+
+@layer base {
+  :root {
+    /* ═══ NEON COLOR PALETTE ═══ */
+    /* Ultra-dark background */
+    --void: #000000;
+    --bg-dark: #0A0A0F;
+    --bg-panel: #0F0F1A;
+    --bg-card: #1A1A2E;
+
+    /* Anthropic - Neon Cyan/Blue */
+    --neon-cyan: #00FFFF;
+    --neon-cyan-rgb: 0, 255, 255;
+    --neon-blue: #0080FF;
+    --neon-blue-rgb: 0, 128, 255;
+
+    /* OpenAI - Neon Magenta/Pink */
+    --neon-magenta: #FF00FF;
+    --neon-magenta-rgb: 255, 0, 255;
+    --neon-pink: #FF0080;
+    --neon-pink-rgb: 255, 0, 128;
+
+    /* Status colors */
+    --neon-green: #00FF00;
+    --neon-green-rgb: 0, 255, 0;
+    --neon-yellow: #FFFF00;
+    --neon-yellow-rgb: 255, 255, 0;
+    --neon-red: #FF0040;
+    --neon-red-rgb: 255, 0, 64;
+
+    /* ═══ GLOW EFFECTS ═══ */
+    --glow-cyan: 0 0 10px rgb(var(--neon-cyan-rgb)),
+                 0 0 20px rgb(var(--neon-cyan-rgb)),
+                 0 0 40px rgb(var(--neon-cyan-rgb));
+    --glow-magenta: 0 0 10px rgb(var(--neon-magenta-rgb)),
+                    0 0 20px rgb(var(--neon-magenta-rgb)),
+                    0 0 40px rgb(var(--neon-magenta-rgb));
+    --glow-green: 0 0 10px rgb(var(--neon-green-rgb)),
+                  0 0 20px rgb(var(--neon-green-rgb));
+    --glow-yellow: 0 0 10px rgb(var(--neon-yellow-rgb)),
+                   0 0 20px rgb(var(--neon-yellow-rgb));
+    --glow-red: 0 0 10px rgb(var(--neon-red-rgb)),
+                0 0 20px rgb(var(--neon-red-rgb));
+
+    /* Text shadows for neon effect */
+    --text-glow-cyan: 0 0 8px rgba(var(--neon-cyan-rgb), 0.8),
+                      0 0 16px rgba(var(--neon-cyan-rgb), 0.4);
+    --text-glow-magenta: 0 0 8px rgba(var(--neon-magenta-rgb), 0.8),
+                         0 0 16px rgba(var(--neon-magenta-rgb), 0.4);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
 
 body {
-  background-color: #020617; /* slate-950 */
-  color: #f1f5f9; /* slate-100 */
+  background-color: var(--void);
+  color: #E0E0E0;
+  font-family: var(--font-family-body);
+  font-weight: 300;
+  position: relative;
+  overflow-x: hidden;
 }
 
-/* Smooth scrollbar */
+/* ═══ CYBERPUNK GRID BACKGROUND ═══ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══ AMBIENT RADIAL GLOW ═══ */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 255, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 0, 255, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: ambient-pulse 15s ease-in-out infinite;
+}
+
+@keyframes ambient-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* Ensure content is above background */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CRT SCANLINE EFFECT
+   ═══════════════════════════════════════════════════════════════ */
+
+.scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 255, 255, 0.15),
+    transparent
+  );
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: screen;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEXAGONAL PROVIDER CARDS
+   ═══════════════════════════════════════════════════════════════ */
+
+.provider-card {
+  background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-card) 100%);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Diagonal corner cuts (hexagonal feel) */
+.provider-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+    var(--neon-cyan) 0%,
+    var(--neon-magenta) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 2px;
+  pointer-events: none;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+
+.provider-card:hover::before {
+  opacity: 0.8;
+}
+
+/* Anthropic theme */
+.provider-card[data-provider="anthropic"] {
+  border-image: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue)) 1;
+  box-shadow: var(--glow-cyan);
+}
+
+.provider-card[data-provider="anthropic"]:hover {
+  box-shadow: 0 0 15px rgba(var(--neon-cyan-rgb), 0.4),
+              0 0 30px rgba(var(--neon-cyan-rgb), 0.2),
+              inset 0 0 60px rgba(var(--neon-cyan-rgb), 0.05);
+}
+
+/* OpenAI theme */
+.provider-card[data-provider="openai"] {
+  border-image: linear-gradient(135deg, var(--neon-magenta), var(--neon-pink)) 1;
+  box-shadow: var(--glow-magenta);
+}
+
+.provider-card[data-provider="openai"]:hover {
+  box-shadow: 0 0 15px rgba(var(--neon-magenta-rgb), 0.4),
+              0 0 30px rgba(var(--neon-magenta-rgb), 0.2),
+              inset 0 0 60px rgba(var(--neon-magenta-rgb), 0.05);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY - CYBERPUNK STYLE
+   ═══════════════════════════════════════════════════════════════ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-display);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.text-neon-cyan {
+  color: var(--neon-cyan);
+  text-shadow: var(--text-glow-cyan);
+}
+
+.text-neon-magenta {
+  color: var(--neon-magenta);
+  text-shadow: var(--text-glow-magenta);
+}
+
+.text-neon-green {
+  color: var(--neon-green);
+  text-shadow: var(--glow-green);
+}
+
+.text-neon-yellow {
+  color: var(--neon-yellow);
+  text-shadow: var(--glow-yellow);
+}
+
+.text-neon-red {
+  color: var(--neon-red);
+  text-shadow: var(--glow-red);
+}
+
+/* Glitch text effect */
+.text-glitch {
+  position: relative;
+  animation: glitch 3s infinite;
+}
+
+@keyframes glitch {
+  0%, 90%, 100% { transform: translate(0); }
+  91% { transform: translate(-2px, 1px); }
+  92% { transform: translate(2px, -1px); }
+  93% { transform: translate(-1px, 2px); }
+  94% { transform: translate(1px, -2px); }
+  95% { transform: translate(0); }
+}
+
+.text-glitch::before,
+.text-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.text-glitch::before {
+  color: var(--neon-cyan);
+  animation: glitch-1 2.5s infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+}
+
+.text-glitch::after {
+  color: var(--neon-magenta);
+  animation: glitch-2 3s infinite;
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+}
+
+@keyframes glitch-1 {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-3px, 3px); }
+  40% { transform: translate(-3px, -3px); }
+  60% { transform: translate(3px, 3px); }
+  80% { transform: translate(3px, -3px); }
+}
+
+@keyframes glitch-2 {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(3px, -3px); }
+  40% { transform: translate(3px, 3px); }
+  60% { transform: translate(-3px, -3px); }
+  80% { transform: translate(-3px, 3px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NEON PULSE ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Heartbeat pulse for live data */
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(var(--neon-cyan-rgb), 0.5),
+                0 0 10px rgba(var(--neon-cyan-rgb), 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(var(--neon-cyan-rgb), 0.8),
+                0 0 20px rgba(var(--neon-cyan-rgb), 0.5),
+                0 0 30px rgba(var(--neon-cyan-rgb), 0.3);
+  }
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Number count-up with glow */
+@keyframes count-up-glow {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.8);
+    filter: blur(2px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.05);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-count-up {
+  animation: count-up-glow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS & INTERACTIVE ELEMENTS
+   ═══════════════════════════════════════════════════════════════ */
+
+.btn-neon {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid;
+  transition: all 0.3s;
+}
+
+.btn-neon::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    currentColor,
+    transparent
+  );
+  transform: translateX(-100%) rotate(45deg);
+  transition: transform 0.6s;
+  opacity: 0.1;
+}
+
+.btn-neon:hover::before {
+  transform: translateX(100%) rotate(45deg);
+}
+
+.btn-cyan {
+  color: var(--neon-cyan);
+  border-color: var(--neon-cyan);
+  text-shadow: var(--text-glow-cyan);
+}
+
+.btn-cyan:hover {
+  background: rgba(var(--neon-cyan-rgb), 0.1);
+  box-shadow: var(--glow-cyan);
+}
+
+.btn-magenta {
+  color: var(--neon-magenta);
+  border-color: var(--neon-magenta);
+  text-shadow: var(--text-glow-magenta);
+}
+
+.btn-magenta:hover {
+  background: rgba(var(--neon-magenta-rgb), 0.1);
+  box-shadow: var(--glow-magenta);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DIAGONAL ACCENT LINES
+   ═══════════════════════════════════════════════════════════════ */
+
+.diagonal-accent {
+  position: relative;
+}
+
+.diagonal-accent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--neon-cyan), transparent);
+  transform: rotate(-45deg);
+  transform-origin: 0 0;
+}
+
+.diagonal-accent::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--neon-magenta));
+  transform: rotate(-45deg);
+  transform-origin: 100% 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING & SKELETON
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-panel) 0%,
+    rgba(var(--neon-cyan-rgb), 0.1) 50%,
+    var(--bg-panel) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════════════════════ */
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-dark);
+  border-left: 1px solid rgba(var(--neon-cyan-rgb), 0.1);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  background: linear-gradient(180deg, var(--neon-cyan), var(--neon-magenta));
+  border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  box-shadow: var(--glow-cyan);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STAGGERED ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 150ms; }
+.stagger-3 { animation-delay: 300ms; }
+.stagger-4 { animation-delay: 450ms; }
+.stagger-5 { animation-delay: 600ms; }
+.stagger-6 { animation-delay: 750ms; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY
+   ═══════════════════════════════════════════════════════════════ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus states */
+:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+  box-shadow: var(--glow-cyan);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════ */
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-family-mono);
+}
+
+kbd {
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-panel);
+  border: 1px solid rgba(var(--neon-cyan-rgb), 0.3);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-family: var(--font-family-mono);
+  box-shadow: 0 0 10px rgba(var(--neon-cyan-rgb), 0.2);
+  color: var(--neon-cyan);
 }
